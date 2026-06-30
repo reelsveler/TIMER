@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>김소은의 릴스 타이머</title>
+  
+  <!-- iOS 및 홈 화면 최적화를 위한 Apple 웹앱 메타 태그 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="릴스타이머">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- 고급 타이포그래피 구글 폰트 적용 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* iOS 터치 하이라이트 및 스크롤 최적화 */
+    body {
+      background-color: #070913;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    
+    /* 타이머 완료 시 맥박처럼 뛰는 레드 펄스 애니메이션 */
+    @keyframes redPulse {
+      0%, 100% { transform: scale(1); opacity: 1; text-shadow: 0 0 12px rgba(239, 68, 68, 0.4); }
+      50% { transform: scale(1.04); opacity: 0.8; text-shadow: 0 0 24px rgba(239, 68, 68, 0.8); }
+    }
+    .animate-red-pulse {
+      animation: redPulse 1.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-white flex flex-col items-center justify-center p-4 font-sans selection:bg-purple-500/30">
+
+  <!-- 메인 프리미엄 타이머 카드 디바이스 프레임 -->
+  <div class="w-full max-w-md bg-gradient-to-b from-[#11142A]/90 to-[#0A0C1B]/95 rounded-3xl p-6 shadow-2xl shadow-purple-950/20 border border-purple-500/10 relative overflow-hidden">
+    
+    <!-- 장식용 후면 네온 블러 서클 -->
+    <div class="absolute -top-12 -left-12 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- 헤더 영역: 서울 & 뉴욕 이중 실시간 세계 시계 -->
+    <div class="flex flex-col items-center mb-6 text-center border-b border-purple-500/5 pb-5">
+      <div class="flex flex-col gap-1.5 w-full items-center mb-3">
+        <!-- 서울 시간대 -->
+        <div class="flex items-center gap-1.5 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full text-purple-300 text-[11px] font-medium font-mono">
+          <svg class="w-3.5 h-3.5 text-purple-400 animate-pulse" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span id="seoul-time">서울: 로딩 중...</span>
+        </div>
+        <!-- 뉴욕 시간대 -->
+        <div class="flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-300 text-[11px] font-medium font-mono">
+          <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+          </svg>
+          <span id="nyc-time">뉴욕: 로딩 중...</span>
+        </div>
+      </div>
+      
+      <h1 class="text-xl font-bold bg-gradient-to-r from-purple-300 via-pink-300 to-emerald-300 bg-clip-text text-transparent flex items-center gap-2">
+        <svg class="w-5 h-5 text-purple-400 animate-pulse" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+        김소은의 릴스 타이머
+      </h1>
+      <p class="text-xs text-gray-400 mt-1">김소은 강사와 함께하는 고집중 숏폼 메이커</p>
+    </div>
+
+    <!-- 타이머 메인 디스플레이 영역 -->
+    <div class="flex flex-col items-center my-4 relative">
+      <!-- 링 가이드 디자인 및 시간 노출 -->
+      <div id="timer-visual-container" class="relative flex items-center justify-center w-64 h-64 transition-all duration-300">
+        <svg class="w-full h-full transform -rotate-90">
+          <circle cx="128" cy="128" r="84" class="stroke-[#13162C] fill-none" stroke-width="8"></circle>
+          <circle id="progress-bar" cx="128" cy="128" r="84" class="fill-none transition-all duration-200" stroke-width="8" stroke-dasharray="527.78" stroke-dashoffset="0" stroke-linecap="round" stroke="url(#mintPurpleGradient)"></circle>
+          <defs>
+            <linearGradient id="mintPurpleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#A855F7" />
+              <stop offset="50%" stop-color="#EC4899" />
+              <stop offset="100%" stop-color="#10B981" />
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <!-- 타이머 카운터 텍스트 -->
+        <div class="absolute flex flex-col items-center justify-center">
+          <button id="btn-open-edit" class="group flex flex-col items-center justify-center cursor-pointer transition-all duration-200 focus:outline-none" title="클릭하여 직접 시간 설정">
+            <div id="timer-numbers" class="text-5xl font-mono font-bold tracking-tight text-white select-none transition-all duration-200 drop-shadow-md">
+              00:15
+            </div>
+            <div class="flex items-center gap-1 mt-1 text-[10px] text-gray-500 group-hover:text-purple-400 font-medium tracking-wide">
+              <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+              </svg>
+              직접 시간 입력
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 직접 시간 설정 창 (평소에는 hidden) -->
+      <div id="timer-editor-container" class="hidden w-64 h-64 flex flex-col items-center justify-center bg-[#13162E] rounded-full border border-purple-500/20 shadow-inner p-4 transition-all duration-300">
+        <span class="text-[11px] text-purple-300 font-medium mb-2">시간 직접 설정 (최대 99:59)</span>
+        
+        <div class="flex items-center gap-2 mb-3">
+          <div class="flex flex-col items-center">
+            <span class="text-[9px] text-gray-400 mb-0.5">분 (MM)</span>
+            <input id="input-min" type="number" min="0" max="99" value="00" class="w-16 bg-[#1A1E3C] text-center border border-purple-500/30 rounded-lg py-2 text-2xl font-mono text-emerald-400 focus:outline-none focus:border-emerald-400">
+          </div>
+          <span class="text-2xl text-gray-400 mt-3">:</span>
+          <div class="flex flex-col items-center">
+            <span class="text-[9px] text-gray-400 mb-0.5">초 (SS)</span>
+            <input id="input-sec" type="number" min="0" max="59" value="15" class="w-16 bg-[#1A1E3C] text-center border border-purple-500/30 rounded-lg py-2 text-2xl font-mono text-emerald-400 focus:outline-none focus:border-emerald-400">
+          </div>
+        </div>
+
+        <p id="edit-error" class="hidden text-[10px] text-red-400 mb-2 font-medium text-center px-2"></p>
+
+        <div class="flex gap-2">
+          <button id="btn-cancel-edit" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs rounded-full transition-colors focus:outline-none">
+            취소
+          </button>
+          <button id="btn-save-edit" class="px-3 py-1 bg-gradient-to-r from-purple-500 to-emerald-500 hover:opacity-90 text-white text-xs rounded-full font-semibold transition-opacity flex items-center gap-1 focus:outline-none">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+            </svg>
+            저장
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 미세 조절기 (분 / 초 더하기 빼기) -->
+    <div class="flex justify-center items-center gap-4 mb-6">
+      <div class="flex flex-col items-center gap-1">
+        <span class="text-[10px] text-gray-400 font-medium">분 조절</span>
+        <div class="flex gap-1.5">
+          <button id="btn-min-minus" class="p-1.5 bg-[#141732] hover:bg-purple-950/40 rounded-lg border border-purple-500/10 text-purple-300 active:scale-95 transition-transform focus:outline-none" title="1분 빼기">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"></path>
+            </svg>
+          </button>
+          <button id="btn-min-plus" class="p-1.5 bg-[#141732] hover:bg-[#1C2044] rounded-lg border border-purple-500/10 text-purple-300 active:scale-95 transition-transform focus:outline-none" title="1분 더하기">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="w-px h-8 bg-purple-500/10 self-end mb-1"></div>
+
+      <div class="flex flex-col items-center gap-1">
+        <span class="text-[10px] text-gray-400 font-medium">초 조절</span>
+        <div class="flex gap-1.5">
+          <button id="btn-sec-minus-10" class="p-1.5 bg-[#141732] hover:bg-purple-950/40 rounded-lg border border-purple-500/10 text-emerald-400 active:scale-95 transition-transform focus:outline-none" title="10초 빼기">
+            <span class="text-[10px] font-bold font-mono">-10</span>
+          </button>
+          <button id="btn-sec-plus-10" class="p-1.5 bg-[#141732] hover:bg-[#1C2044] rounded-lg border border-purple-500/10 text-emerald-400 active:scale-95 transition-transform focus:outline-none" title="10초 더하기">
+            <span class="text-[10px] font-bold font-mono">+10</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 주 제어 버튼 (초기화 및 타이머 시작/일시정지) -->
+    <div class="flex justify-center items-center gap-3 mb-6">
+      <button id="btn-reset" class="flex-1 flex items-center justify-center gap-1.5 py-3 bg-[#13162F] hover:bg-[#1A1F42] border border-purple-500/15 text-gray-300 rounded-2xl text-sm font-semibold active:scale-98 transition-all focus:outline-none">
+        <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89"></path>
+        </svg>
+        초기화
+      </button>
+
+      <button id="btn-start" class="flex-[2] flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold shadow-lg active:scale-98 transition-all duration-200 bg-gradient-to-r from-emerald-400 to-emerald-500 text-slate-950 shadow-emerald-500/10 hover:opacity-95 focus:outline-none">
+        <span id="play-pause-icon">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </span>
+        <span id="start-btn-text">타이머 시작</span>
+      </button>
+    </div>
+
+    <!-- 릴스 최적화 프리셋 그리드 -->
+    <div class="mb-6">
+      <span class="text-xs text-purple-300 font-semibold mb-2 block">릴스 녹화 최적 프리셋</span>
+      <div class="grid grid-cols-3 gap-2">
+        <button onclick="applyPreset(15)" id="preset-15" class="preset-btn text-xs py-2 px-1.5 rounded-xl font-medium transition-all duration-200 active:scale-95 border bg-purple-500/15 text-purple-300 border-purple-500/45 focus:outline-none">15초 (숏)</button>
+        <button onclick="applyPreset(30)" id="preset-30" class="preset-btn text-xs py-2 px-1.5 rounded-xl font-medium transition-all duration-200 active:scale-95 border bg-[#0E1125] hover:bg-[#141933] text-gray-400 border-purple-500/5 hover:text-white focus:outline-none">30초 (일반)</button>
+        <button onclick="applyPreset(60)" id="preset-60" class="preset-btn text-xs py-2 px-1.5 rounded-xl font-medium transition-all duration-200 active:scale-95 border bg-[#0E1125] hover:bg-[#141933] text-gray-400 border-purple-500/5 hover:text-white focus:outline-none">60초 (롱)</button>
+        <button onclick="applyPreset(90)" id="preset-90" class="preset-btn text-xs py-2 px-1.5 rounded-xl font-medium transition-all duration-200 active:scale-95 border bg-[#0E1125] hover:bg-[#141933] text-gray-400 border-purple-500/5 hover:text-white focus:outline-none">90초 (심화)</button>
+        <button onclick="applyPreset(180)" id="preset-180" class="preset-btn text-xs py-2 px-1.5 rounded-xl font-medium transition-all duration-200 active:scale-95 border bg-[#0E1125] hover:bg-[#141933] text-gray-400 border-purple-500/5 hover:text-white focus:outline-none">3분</button>
+        <button onclick="applyPreset(300)" id="preset-300" class="preset-btn text-xs py-2 px-1.5 rounded-xl font-medium transition-all duration-200 active:scale-95 border bg-[#0E1125] hover:bg-[#141933] text-gray-400 border-purple-500/5 hover:text-white focus:outline-none">5분</button>
+      </div>
+    </div>
+
+    <!-- 알림음 토글 및 소리 테스트 -->
+    <div class="bg-[#0D0F21]/80 rounded-2xl p-3 border border-purple-500/5 mb-6 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <button id="btn-toggle-mute" class="p-1.5 bg-[#141732] hover:bg-[#1C2044] rounded-lg text-purple-300 focus:outline-none" title="음소거 토글">
+          <span id="mute-icon-container">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.5 9H4.5A1.5 1.5 0 003 10.5v3a1.5 1.5 0 001.5 1.5h3L12 18.75z"></path>
+            </svg>
+          </span>
+        </button>
+        <span class="text-xs text-gray-300 font-medium">알림 벨소리</span>
+      </div>
+
+      <button id="btn-test-sound" class="text-[11px] bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-300 rounded-lg px-2.5 py-1 font-semibold transition-colors focus:outline-none">
+        소리 테스트
+      </button>
+    </div>
+
+    <!-- 동적 릴스 촬영 가이드 팁 -->
+    <div id="reels-tip-card" class="bg-gradient-to-r from-emerald-950/20 to-purple-950/20 rounded-2xl p-4 border border-purple-500/5 transition-all duration-300">
+      <div class="flex items-center gap-1.5 mb-1">
+        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+        </svg>
+        <span id="reels-tip-title" class="text-xs font-bold text-emerald-300">15초 릴스 (핵심 숏폼)</span>
+      </div>
+      <p id="reels-tip-desc" class="text-xs text-gray-300 leading-relaxed">강력한 첫 3초의 훅(Hook)과 스피디한 자막으로 이탈을 막으세요.</p>
+    </div>
+
+    <!-- 푸터 영역: 제작자 크레딧 및 인스타그램 바로가기 -->
+    <div class="mt-6 border-t border-purple-500/5 pt-4 text-center flex flex-col items-center gap-2">
+      <p class="text-xs text-gray-500 tracking-wide font-medium">
+        제작자 : <span class="text-purple-300 font-bold">김소은</span>
+        <span class="mx-1 text-purple-600/50">|</span>
+        <span class="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent font-bold">릴스블러 @reels_veler 전문강사</span>
+      </p>
+      <a href="https://www.instagram.com/reels_veler/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-xs text-pink-400 hover:text-pink-300 transition-colors font-semibold">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+        </svg>
+        @reels_veler 인스타그램 바로가기
+      </a>
+    </div>
+
+  </div>
+
+  <script>
+    // 1. 애플리케이션 상태 관리
+    let timeLeft = 15;
+    let duration = 15;
+    let isRunning = false;
+    let isMuted = false;
+    
+    let timerInterval = null;
+    let alarmInterval = null;
+    let audioCtx = null;
+
+    // DOM 캐싱
+    const elSeoulTime = document.getElementById('seoul-time');
+    const elNycTime = document.getElementById('nyc-time');
+    const elTimerNumbers = document.getElementById('timer-numbers');
+    const elProgressBar = document.getElementById('progress-bar');
+    const elStartBtn = document.getElementById('btn-start');
+    const elStartBtnText = document.getElementById('start-btn-text');
+    const elPlayPauseIcon = document.getElementById('play-pause-icon');
+    
+    // 시간 직접 설정용 캐싱
+    const elTimerVisualContainer = document.getElementById('timer-visual-container');
+    const elTimerEditorContainer = document.getElementById('timer-editor-container');
+    const elBtnOpenEdit = document.getElementById('btn-open-edit');
+    const elBtnCancelEdit = document.getElementById('btn-cancel-edit');
+    const elBtnSaveEdit = document.getElementById('btn-save-edit');
+    const elInputMin = document.getElementById('input-min');
+    const elInputSec = document.getElementById('input-sec');
+    const elEditError = document.getElementById('edit-error');
+
+    // 시간 미세 및 주컨트롤 조절 캐싱
+    const elBtnMinMinus = document.getElementById('btn-min-minus');
+    const elBtnMinPlus = document.getElementById('btn-min-plus');
+    const elBtnSecMinus10 = document.getElementById('btn-sec-minus-10');
+    const elBtnSecPlus10 = document.getElementById('btn-sec-plus-10');
+    const elBtnReset = document.getElementById('btn-reset');
+    const elBtnToggleMute = document.getElementById('btn-toggle-mute');
+    const elMuteIconContainer = document.getElementById('mute-icon-container');
+    const elBtnTestSound = document.getElementById('btn-test-sound');
+
+    // 하단 릴스 팁 카드 캐싱
+    const elReelsTipTitle = document.getElementById('reels-tip-title');
+    const elReelsTipDesc = document.getElementById('reels-tip-desc');
+
+    // 2. 실시간 시계 연동 (서울 및 뉴욕 이중 실시간 시간대 반영)
+    function updateClocks() {
+      const now = new Date();
+      const optionsLocal = {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      };
+      const optionsNYC = {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      };
+      elSeoulTime.textContent = '서울: ' + now.toLocaleString('ko-KR', optionsLocal);
+      elNycTime.textContent = '뉴욕: ' + now.toLocaleString('ko-KR', optionsNYC);
+    }
+    updateClocks();
+    setInterval(updateClocks, 1000);
+
+    // 3. Web Audio API 사운드 제어 (iOS 및 모바일 자동재생 보안정책 우회 가공)
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function stopAlarmSound() {
+      if (alarmInterval) {
+        clearInterval(alarmInterval);
+        alarmInterval = null;
+      }
+    }
+
+    function playAlarmBeep() {
+      if (isMuted) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+
+        stopAlarmSound();
+
+        function playTone(freq, startDelay, durationSec, type = 'sine') {
+          if (!audioCtx || audioCtx.state === 'suspended') return;
+          const osc = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+          
+          osc.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+          
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + startDelay);
+          
+          // 오디오 노이즈 제거용 미세 볼륨 엔벨로프 설계
+          gainNode.gain.setValueAtTime(0, audioCtx.currentTime + startDelay);
+          gainNode.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + startDelay + 0.05);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + startDelay + durationSec);
+          
+          osc.start(audioCtx.currentTime + startDelay);
+          osc.stop(audioCtx.currentTime + startDelay + durationSec);
+        }
+
+        // 고급스러운 릴스 전용 상승 마침음 코드 아르페지오 연동
+        function triggerArpeggio() {
+          playTone(523.25, 0, 0.25, 'sine');     // C5 도
+          playTone(659.25, 0.12, 0.25, 'sine');    // E5 미
+          playTone(783.99, 0.24, 0.25, 'sine');    // G5 솔
+          playTone(1046.50, 0.36, 0.5, 'triangle'); // C6 하이도
+        }
+
+        triggerArpeggio();
+
+        // 15초간 소리가 반복 출력되도록 설계 (총 10회 루프)
+        let count = 1;
+        const maxCount = 10;
+        
+        alarmInterval = setInterval(() => {
+          if (count >= maxCount || isMuted) {
+            stopAlarmSound();
+            return;
+          }
+          triggerArpeggio();
+          count++;
+        }, 1500);
+
+      } catch (err) {
+        console.error('오디오 API 실행 오류:', err);
+      }
+    }
+
+    // 소리 수동 테스트 클릭 바인딩
+    elBtnTestSound.addEventListener('click', () => {
+      initAudio();
+      playAlarmBeep();
+    });
+
+    // 음소거 처리 토글 바인딩
+    elBtnToggleMute.addEventListener('click', () => {
+      isMuted = !isMuted;
+      if (isMuted) {
+        stopAlarmSound();
+        elMuteIconContainer.innerHTML = `
+          <svg class="w-4 h-4 text-pink-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6L4.5 9H1.5A1.5 1.5 0 000 10.5v3a1.5 1.5 0 001.5 1.5h3L9 18.75V5.25z"></path>
+          </svg>
+        `;
+      } else {
+        elMuteIconContainer.innerHTML = `
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.5 9H4.5A1.5 1.5 0 003 10.5v3a1.5 1.5 0 001.5 1.5h3L12 18.75z"></path>
+          </svg>
+        `;
+      }
+    });
+
+    // 4. 시간 포맷팅 및 디스플레이 리프레시 갱신 제어
+    function formatTimeDisplay(totalSeconds) {
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = totalSeconds % 60;
+      return {
+        minutes: mins.toString().padStart(2, '0'),
+        seconds: secs.toString().padStart(2, '0')
+      };
+    }
+
+    function refreshUI() {
+      const { minutes, seconds } = formatTimeDisplay(timeLeft);
+      elTimerNumbers.textContent = `${minutes}:${seconds}`;
+
+      // 게이지 서클 링 업데이트 (최대 둘레값: 527.78)
+      const progressRatio = duration > 0 ? (timeLeft / duration) : 0;
+      const circumference = 527.78;
+      const strokeDashoffset = circumference - (progressRatio * circumference);
+      elProgressBar.setAttribute('stroke-dashoffset', strokeDashoffset);
+
+      // 타이머 종료 시 글자 빨간색 변형 및 맥박 뛰는 펄스 효과 바인딩
+      if (timeLeft === 0) {
+        elTimerNumbers.classList.remove('text-white');
+        elTimerNumbers.classList.add('text-red-500', 'animate-red-pulse');
+      } else {
+        elTimerNumbers.classList.remove('text-red-500', 'animate-red-pulse');
+        elTimerNumbers.classList.add('text-white');
+      }
+
+      // 제어 상태 텍스트 분기 처리
+      if (isRunning) {
+        elStartBtnText.textContent = '일시정지';
+        elStartBtn.className = "flex-[2] flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold shadow-lg active:scale-98 transition-all duration-200 bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-purple-500/10 hover:opacity-95 focus:outline-none";
+        elPlayPauseIcon.innerHTML = `<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+      } else {
+        if (timeLeft === 0) {
+          elStartBtnText.textContent = '타이머 완료';
+          elStartBtn.className = "flex-[2] flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold shadow-none border border-gray-700/50 bg-gray-800 text-gray-500 cursor-not-allowed focus:outline-none";
+          elPlayPauseIcon.innerHTML = `<svg class="w-4 h-4 fill-none stroke-current" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`;
+        } else {
+          elStartBtnText.textContent = '타이머 시작';
+          elStartBtn.className = "flex-[2] flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold shadow-lg active:scale-98 transition-all duration-200 bg-gradient-to-r from-emerald-400 to-emerald-500 text-slate-950 shadow-emerald-500/10 hover:opacity-95 focus:outline-none";
+          elPlayPauseIcon.innerHTML = `<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+        }
+      }
+
+      // 선택한 버튼 프리셋 보더 하이라이팅 적용
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.classList.remove('bg-purple-500/15', 'text-purple-300', 'border-purple-500/45');
+        btn.classList.add('bg-[#0E1125]', 'text-gray-400', 'border-purple-500/5');
+      });
+      const activePresetBtn = document.getElementById(`preset-${duration}`);
+      if (activePresetBtn) {
+        activePresetBtn.classList.remove('bg-[#0E1125]', 'text-gray-400', 'border-purple-500/5');
+        activePresetBtn.classList.add('bg-purple-500/15', 'text-purple-300', 'border-purple-500/45');
+      }
+
+      updateReelsTips();
+    }
+
+    // 시간 구간대에 적합한 릴스 기획 팁 매칭
+    function updateReelsTips() {
+      if (timeLeft === 0) {
+        elReelsTipTitle.textContent = '촬영 완료! 🎉';
+        elReelsTipDesc.textContent = '수고하셨습니다! 다음 릴스 영상 콘텐츠 기획을 시작해 볼까요?';
+        return;
+      }
+
+      if (duration <= 15) {
+        elReelsTipTitle.textContent = '15초 릴스 (핵심 숏폼)';
+        elReelsTipDesc.textContent = '강력한 첫 3초의 훅(Hook)과 스피디한 자막으로 이탈을 막으세요.';
+      } else if (duration <= 30) {
+        elReelsTipTitle.textContent = '30초 릴스 (스토리 숏폼)';
+        elReelsTipDesc.textContent = '일상 비하인드나 반전이 있는 에피소드를 스피디하게 녹여내기 최적의 시간입니다.';
+      } else if (duration <= 60) {
+        elReelsTipTitle.textContent = '60초 릴스 (정보형 숏폼)';
+        elReelsTipDesc.textContent = '문제제기 - 솔루션(해결책) - 행동 유도(CTA)의 3단계 구성을 탄탄히 매칭해보세요.';
+      } else if (duration <= 90) {
+        elReelsTipTitle.textContent = '90초 릴스 (튜토리얼/심층 콘텐츠)';
+        elReelsTipDesc.textContent = '화면 전환이나 자막 색상 대비를 자주 주어야 시청 지속 시간(Retention)이 유지됩니다.';
+      } else {
+        elReelsTipTitle.textContent = '롱포맷 콘텐츠 기획형';
+        elReelsTipDesc.textContent = '호흡을 조절하고 핵심 요약 카드를 중간중간 노출해 집중력을 이어가세요.';
+      }
+    }
+
+    // 5. 타이머 동작 및 변수 핸들러 함수
+    function toggleTimer() {
+      if (timeLeft === 0) return;
+      initAudio(); // iOS 모바일 사운드 활성
+      stopAlarmSound();
+
+      isRunning = !isRunning;
+      
+      if (isRunning) {
+        timerInterval = setInterval(() => {
+          timeLeft--;
+          if (timeLeft <= 0) {
+            timeLeft = 0;
+            isRunning = false;
+            clearInterval(timerInterval);
+            playAlarmBeep();
+          }
+          refreshUI();
+        }, 1000);
+      } else {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+        }
+      }
+      refreshUI();
+    }
+
+    function resetTimer() {
+      isRunning = false;
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+      stopAlarmSound();
+      timeLeft = duration;
+      refreshUI();
+    }
+
+    function adjustMinutes(amount) {
+      stopAlarmSound();
+      const currentMin = Math.floor(timeLeft / 60);
+      const currentSec = timeLeft % 60;
+      let newMin = currentMin + amount;
+      if (newMin > 99) newMin = 99;
+      if (newMin < 0) newMin = 0;
+      
+      const newTotal = newMin * 60 + currentSec;
+      timeLeft = newTotal;
+      duration = newTotal;
+      refreshUI();
+    }
+
+    function adjustSeconds(amount) {
+      stopAlarmSound();
+      let newTotal = timeLeft + amount;
+      if (newTotal > 5999) newTotal = 5999;
+      if (newTotal < 0) newTotal = 0;
+      
+      timeLeft = newTotal;
+      duration = newTotal;
+      refreshUI();
+    }
+
+    function applyPreset(seconds) {
+      isRunning = false;
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+      stopAlarmSound();
+      timeLeft = seconds;
+      duration = seconds;
+      refreshUI();
+    }
+
+    // 6. 타이머 직접 수정 모드 로직
+    function openEditView() {
+      isRunning = false;
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+      stopAlarmSound();
+      
+      const mins = Math.floor(timeLeft / 60);
+      const secs = timeLeft % 60;
+      elInputMin.value = mins.toString().padStart(2, '0');
+      elInputSec.value = secs.toString().padStart(2, '0');
+      
+      elEditError.classList.add('hidden');
+      elEditError.textContent = '';
+      
+      elTimerVisualContainer.classList.add('hidden');
+      elTimerEditorContainer.classList.remove('hidden');
+    }
+
+    function closeEditView() {
+      elTimerEditorContainer.classList.add('hidden');
+      elTimerVisualContainer.classList.remove('hidden');
+      refreshUI();
+    }
+
+    function saveDirectEdit() {
+      const minVal = parseInt(elInputMin.value, 10);
+      const secVal = parseInt(elInputSec.value, 10);
+
+      if (isNaN(minVal) || minVal < 0 || minVal > 99) {
+        elEditError.textContent = '분은 0에서 99 사이여야 합니다.';
+        elEditError.classList.remove('hidden');
+        return;
+      }
+      if (isNaN(secVal) || secVal < 0 || secVal > 59) {
+        elEditError.textContent = '초는 0에서 59 사이여야 합니다.';
+        elEditError.classList.remove('hidden');
+        return;
+      }
+
+      const newTotal = minVal * 60 + secVal;
+      if (newTotal === 0) {
+        elEditError.textContent = '시간은 0초 이상이어야 합니다.';
+        elEditError.classList.remove('hidden');
+        return;
+      }
+
+      timeLeft = newTotal;
+      duration = newTotal;
+      closeEditView();
+    }
+
+    // 7. 각 엘리먼트별 리스너 구성원 바인딩
+    elStartBtn.addEventListener('click', toggleTimer);
+    elBtnReset.addEventListener('click', resetTimer);
+    
+    elBtnMinMinus.addEventListener('click', () => adjustMinutes(-1));
+    elBtnMinPlus.addEventListener('click', () => adjustMinutes(1));
+    elBtnSecMinus10.addEventListener('click', () => adjustSeconds(-10));
+    elBtnSecPlus10.addEventListener('click', () => adjustSeconds(10));
+
+    elBtnOpenEdit.addEventListener('click', openEditView);
+    elBtnCancelEdit.addEventListener('click', closeEditView);
+    elBtnSaveEdit.addEventListener('click', saveDirectEdit);
+
+    // 최초 뷰 강제 렌더링
+    refreshUI();
+  </script>
+
+</body>
+</html>
